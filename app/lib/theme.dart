@@ -166,15 +166,18 @@ class PlateChip extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     height: small ? 22 : 24,
     padding: EdgeInsets.symmetric(horizontal: small ? 6 : 7),
-    alignment: Alignment.center,
     decoration: BoxDecoration(
       color: Palette.surface,
       border: Border.all(color: Palette.ink, width: 1.5),
       borderRadius: BorderRadius.circular(6),
     ),
-    child: Text(
-      plate,
-      style: TextStyle(fontSize: small ? 11 : 12, fontWeight: FontWeight.w700, letterSpacing: 0.7),
+    // widthFactor 1: shrink to the text instead of filling the space given.
+    child: Center(
+      widthFactor: 1,
+      child: Text(
+        plate,
+        style: TextStyle(fontSize: small ? 11 : 12, fontWeight: FontWeight.w700, letterSpacing: 0.7),
+      ),
     ),
   );
 }

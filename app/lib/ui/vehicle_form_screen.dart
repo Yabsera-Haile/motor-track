@@ -5,6 +5,7 @@ import '../data/models.dart';
 import '../data/repo.dart';
 import '../format.dart';
 import '../theme.dart';
+import 'inputs.dart';
 import 'home_screen.dart' show confirmDelete;
 
 /// Add a vehicle, or edit one when [vehicle] is given.
@@ -224,7 +225,7 @@ class _VehicleFormScreenState extends State<VehicleFormScreen> {
                 TextFormField(
                   controller: _amount,
                   keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly, _ThousandsFormatter()],
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly, ThousandsFormatter()],
                   style: const TextStyle(fontWeight: FontWeight.w600, fontFeatures: tabular),
                   decoration: InputDecoration(labelText: amountLabel, suffixText: 'RWF'),
                   validator: (s) => (int.tryParse(digits(s ?? '')) ?? 0) <= 0 ? 'Enter the amount.' : null,
@@ -398,18 +399,4 @@ class _DateField extends StatelessWidget {
       child: Text(value == null ? 'Pick a date' : longDate(value!), style: const TextStyle(fontSize: 16)),
     ),
   );
-}
-
-/// Shows 6000 as "6,000" while typing.
-class _ThousandsFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
-    final n = int.tryParse(newValue.text);
-    if (n == null) return newValue.copyWith(text: '');
-    final text = rwf(n);
-    return TextEditingValue(
-      text: text,
-      selection: TextSelection.collapsed(offset: text.length),
-    );
-  }
 }

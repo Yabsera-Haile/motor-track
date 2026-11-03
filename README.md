@@ -35,6 +35,23 @@ cd app && flutter run --dart-define-from-file=env/local.json
 
 `env/local.json` points at the local backend. Copy `env/example.json` to `env/prod.json` for the real project.
 
+## Build the Android app
+
+These files stay on the build PC and are not in git. Keep a backup of the first two: every update must be signed with the same key.
+
+| File | What |
+|---|---|
+| `app/android/key.properties` | Signing key password |
+| `app/android/app/upload-keystore.jks` | Signing key |
+| `app/android/app/google-services.json` | Firebase config (download again from the Firebase console if lost) |
+| `app/env/prod.json` | Supabase URL and publishable key |
+
+```bash
+cd app && flutter build apk --release --split-per-abi --dart-define-from-file=env/prod.json
+```
+
+Hand out `build/app/outputs/flutter-apk/app-arm64-v8a-release.apk` (most phones), or `app-armeabi-v7a-release.apk` for older 32-bit phones. Raise `version:` in `pubspec.yaml` for every release.
+
 ## Tests
 
 ```bash

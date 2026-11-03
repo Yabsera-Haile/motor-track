@@ -109,7 +109,7 @@ CardState describeCard(Vehicle v, VehicleToday? t, {required String deadline, Da
 }
 
 /// One square in the "last 7 days" strip.
-enum DayCell { ok, late, part, miss, rest, due, none }
+enum DayCell { ok, late, part, miss, rest, due, none, future }
 
 List<DayCell> lastSevenDays(List<DueDay> dues, DateTime today) {
   final byDate = {for (final d in dues) d.dueDate: d.status};

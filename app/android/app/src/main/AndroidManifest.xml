@@ -1,4 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Release builds need this to reach Supabase. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:label="Motor Track"
         android:name="${applicationName}"

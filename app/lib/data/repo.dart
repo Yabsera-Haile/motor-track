@@ -4,7 +4,17 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../format.dart';
+import 'history.dart';
 import 'models.dart';
+
+export 'history.dart' show DueRow, PaymentRow, PaymentSource;
+
+class VehicleHistory {
+  const VehicleHistory({required this.dues, required this.open, required this.payments});
+  final Map<DateTime, DueRow> dues;
+  final List<DueRow> open;
+  final List<PaymentRow> payments;
+}
 
 /// Everything the screens read and write. Holds the team's data in memory and
 /// reloads it whenever another phone changes something (Supabase Realtime).
@@ -159,6 +169,79 @@ class Repo extends ChangeNotifier {
         .eq('id', v.id);
     await load();
   }
+
+  /// Calendar dues between [from] and [to], unpaid dues, and recent payments.
+  Future<VehicleHistory> history(String vehicleId, {required DateTime from, required DateTime to}) async {
+    final results = await Future.wait([
+      client
+          .from('v_dues')
+          .select()
+          .eq('vehicle_id', vehicleId)
+          .gte('due_date', isoDate(from))
+          .lte('due_date', isoDate(to)),
+      client
+          .from('v_dues')
+          .select()
+          .eq('vehicle_id', vehicleId)
+          .inFilter('status', ['open', 'partial_open', 'partial', 'unpaid'])
+          .order('due_date', ascending: true),
+      client
+          .from('payments')
+          .select(
+            'id, amount, paid_at, source, tx_id, held_by_member_id, recorded_by_member_id, note, '
+            'allocations(amount, dues(due_date))',
+          )
+          .eq('vehicle_id', vehicleId)
+          .isFilter('deleted_at', null)
+          .order('paid_at', ascending: false)
+          .limit(60),
+    ]);
+    return VehicleHistory(
+      dues: {for (final r in results[0] as List) parseDate(r['due_date'] as String): DueRow.fromRow(r)},
+      open: (results[1] as List).map((r) => DueRow.fromRow(r)).toList(),
+      payments: (results[2] as List).map((r) => PaymentRow.fromRow(r)).toList(),
+    );
+  }
+
+  /// Unpaid dues for one vehicle, oldest first (for the payment preview).
+  Future<List<DueRow>> openDues(String vehicleId) async {
+    final rows = await client
+        .from('v_dues')
+        .select()
+        .eq('vehicle_id', vehicleId)
+        .inFilter('status', ['open', 'partial_open', 'partial', 'unpaid'])
+        .order('due_date', ascending: true);
+    return rows.map(DueRow.fromRow).toList();
+  }
+
+  /// A cash (or other non-MoMo) payment. MoMo payments only come from Readers.
+  Future<void> recordPayment({
+    required String vehicleId,
+    required int amount,
+    required DateTime paidAt,
+    required PaymentSource source,
+    String? heldById,
+    String? note,
+  }) async {
+    assert(source != PaymentSource.momo);
+    await client.from('payments').insert({
+      'vehicle_id': vehicleId,
+      'amount': amount,
+      'paid_at': paidAt.toUtc().toIso8601String(),
+      'source': source.name,
+      'held_by_member_id': heldById,
+      'note': (note ?? '').trim().isEmpty ? null : note!.trim(),
+    });
+    await load();
+  }
+
+  /// Removes a payment recorded by mistake. The days it paid become open again.
+  Future<void> removePayment(String paymentId) async {
+    await client.from('payments').update({'deleted_at': DateTime.now().toUtc().toIso8601String()}).eq('id', paymentId);
+    await load();
+  }
+
+  String memberName(String? id) => members.where((m) => m.id == id).map((m) => m.name).firstOrNull ?? 'someone';
 
   Map<String, dynamic> _rowOf(Vehicle v) => {
     'id': v.id,

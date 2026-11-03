@@ -6,7 +6,9 @@ import '../data/repo.dart';
 import '../format.dart';
 import '../theme.dart';
 import 'alerts_screen.dart';
+import 'record_payment_sheet.dart';
 import 'vehicle_card.dart';
+import 'vehicle_detail_screen.dart';
 import 'vehicle_form_screen.dart';
 
 enum _Filter { all, unpaid, paid, inactive }
@@ -157,7 +159,12 @@ class _HomeScreenState extends State<HomeScreen> {
                         state: states[v.id]!,
                         days: lastSevenDays(repo.recentDues[v.id] ?? const [], day),
                         today: day,
-                        onOpen: () => _openForm(v),
+                        onOpen: () => Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => VehicleDetailScreen(repo: repo, vehicleId: v.id),
+                          ),
+                        ),
+                        onRecordPayment: () => showRecordPayment(context, repo, v),
                         onToggle: (on) => repo.setActive(v, on),
                         onEdit: () => _openForm(v),
                         onDelete: () => confirmDelete(context, repo, v),

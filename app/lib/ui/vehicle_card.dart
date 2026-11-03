@@ -13,6 +13,7 @@ class VehicleCard extends StatelessWidget {
     required this.today,
     required this.onOpen,
     required this.onToggle,
+    required this.onRecordPayment,
     required this.onEdit,
     required this.onDelete,
   });
@@ -23,6 +24,7 @@ class VehicleCard extends StatelessWidget {
   final DateTime today;
   final VoidCallback onOpen;
   final ValueChanged<bool> onToggle;
+  final VoidCallback onRecordPayment;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
@@ -75,8 +77,13 @@ class VehicleCard extends StatelessWidget {
                 PopupMenuButton<String>(
                   tooltip: 'More actions',
                   icon: const Icon(Icons.more_vert, color: Palette.ink),
-                  onSelected: (a) => a == 'edit' ? onEdit() : onDelete(),
+                  onSelected: (a) => switch (a) {
+                    'pay' => onRecordPayment(),
+                    'edit' => onEdit(),
+                    _ => onDelete(),
+                  },
                   itemBuilder: (_) => const [
+                    PopupMenuItem(value: 'pay', child: Text('Record cash payment')),
                     PopupMenuItem(value: 'edit', child: Text('Edit')),
                     PopupMenuItem(
                       value: 'delete',
@@ -222,7 +229,7 @@ class DaySquare extends StatelessWidget {
       DayCell.miss => _box(Palette.missFill, Border.all(color: Palette.missLine, width: 1.5), r),
       DayCell.rest => _box(Palette.rest, null, r),
       DayCell.due => _box(Palette.surface, Border.all(color: Palette.ink, width: 1.5), r),
-      DayCell.none => _box(Palette.surface, Border.all(color: Palette.control), r),
+      DayCell.none || DayCell.future => _box(Palette.surface, Border.all(color: Palette.control), r),
       DayCell.part => Container(
         width: size,
         height: size,

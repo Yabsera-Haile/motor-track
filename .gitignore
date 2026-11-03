@@ -6,3 +6,6 @@
 
 node_modules/
 .claude/settings.local.json
+
+# Built APKs to hand out
+dist/
