@@ -1,0 +1,8 @@
+# Secrets: never commit these
+*service-account*.json
+*firebase-adminsdk*.json
+.env
+.env.*
+
+node_modules/
+.claude/settings.local.json
