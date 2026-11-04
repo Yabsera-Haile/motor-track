@@ -4,4 +4,6 @@
          to allow setting breakpoints, to provide hot reload, etc.
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Profile builds are for testing only: lets the emulator reach the local Supabase over plain http. -->
+    <application android:usesCleartextTraffic="true"/>
 </manifest>

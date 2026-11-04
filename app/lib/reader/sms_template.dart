@@ -21,6 +21,21 @@ class SmsTemplate {
 
   final String pattern;
   final RegExp _regex;
+
+  /// The compiled pattern, handed to the Android background reader. It only
+  /// uses syntax Java regex reads the same way (flags: case-insensitive, dot-all).
+  String get regexSource => _regex.pattern;
+
+  /// Which field each capture group of [regexSource] holds, in order.
+  List<String> get groups => List.unmodifiable(_order);
+
+  /// The exact text each field matched in [body], for highlighting; null if it doesn't fit.
+  Map<String, String>? rawFields(String body) {
+    final m = _regex.firstMatch(body);
+    if (m == null) return null;
+    return {for (var i = 0; i < _order.length; i++) _order[i]: m.group(i + 1)!};
+  }
+
   late final List<String> _order = _placeholder
       .allMatches(pattern)
       .map((m) => m.group(1)!)

@@ -52,6 +52,10 @@ cd app && flutter build apk --release --split-per-abi --dart-define-from-file=en
 
 Hand out `build/app/outputs/flutter-apk/app-arm64-v8a-release.apk` (most phones), or `app-armeabi-v7a-release.apk` for older 32-bit phones. Raise `version:` in `pubspec.yaml` for every release.
 
+Before handing an APK out, check it contains the app code: `lib/arm64-v8a/libapp.so` (about 6.5 MB) must be inside the file. An APK without it installs fine but closes as soon as it opens. That happened once after the build folder moved: Flutter's cache in `app/.dart_tool/flutter_build` still thought the code was compiled. Deleting that folder and building again fixes it.
+
+`app/build` is a junction to `%LOCALAPPDATA%\MotorTrackBuildpp-build`, so OneDrive doesn't lock build files mid-build.
+
 ## Tests
 
 ```bash

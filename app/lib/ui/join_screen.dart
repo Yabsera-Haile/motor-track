@@ -173,7 +173,7 @@ class _JoinScreenState extends State<JoinScreen> {
                   ? const SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Palette.ink2),
                     )
                   : const Text('Join team'),
             ),

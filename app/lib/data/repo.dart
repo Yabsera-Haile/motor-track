@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../format.dart';
+import '../reader/reader_service.dart';
 import 'history.dart';
 import 'models.dart';
 
@@ -78,7 +79,7 @@ class Repo extends ChangeNotifier {
             .gte('due_date', isoDate(day.subtract(const Duration(days: 6))))
             .lte('due_date', isoDate(day)),
         client.from('members').select().order('name', ascending: true),
-        client.from('devices').select('id, member_id, is_reader, last_checked_at'),
+        client.from('devices').select('id, member_id, is_reader, last_checked_at, reader_sender, unreadable_count'),
         client.from('settings').select().maybeSingle(),
         client
             .from('alerts')
@@ -101,6 +102,10 @@ class Repo extends ChangeNotifier {
       settings = s == null ? TeamSettings.fallback : TeamSettings.fromRow(s);
       openAlerts = (results[6] as List).length;
       loadError = null;
+      // Keep this phone's Reader looking for the current usernames.
+      if (ReaderService.supported && myDevice?.isReader == true) {
+        unawaited(ReaderService.updateUsernames(allUsernames).catchError((Object _) {}));
+      }
     } catch (e) {
       loadError = 'Couldn\'t load the latest data. Pull down to try again.';
       debugPrint('load failed: $e');
@@ -242,6 +247,63 @@ class Repo extends ChangeNotifier {
   }
 
   String memberName(String? id) => members.where((m) => m.id == id).map((m) => m.name).firstOrNull ?? 'someone';
+
+  // ---- Reader ----
+
+  Device? get myDevice => devices.where((d) => d.id == deviceId).firstOrNull;
+
+  /// Every MoMo username of the team's vehicles: the only senders a Reader uploads.
+  List<String> get allUsernames => {for (final v in vehicles) ...v.momoUsernames}.toList();
+
+  /// Saves the message format (reusing an identical one) and returns its id.
+  Future<String> saveTemplate({required String sender, required String pattern, required String sample}) async {
+    final existing = await client
+        .from('sms_templates')
+        .select('id')
+        .eq('sender', sender)
+        .eq('pattern', pattern)
+        .limit(1);
+    if (existing.isNotEmpty) return existing.first['id'] as String;
+    final row = await client
+        .from('sms_templates')
+        .insert({'sender': sender, 'pattern': pattern, 'sample': sample, 'created_by_member_id': me?.id})
+        .select('id')
+        .single();
+    return row['id'] as String;
+  }
+
+  /// Makes this phone a Reader and returns its key (shown only once).
+  Future<String> enableReader({required String sender, required String templateId}) async =>
+      await client.rpc('enable_reader', params: {'p_sender': sender, 'p_template_id': templateId}) as String;
+
+  Future<void> disableReader() async {
+    await client.rpc('disable_reader');
+    await load();
+  }
+
+  Future<void> setMyMomoNumber(String number) async {
+    final id = me?.id;
+    if (id == null) return;
+    await client.from('members').update({'momo_number': number.trim().isEmpty ? null : number.trim()}).eq('id', id);
+    me = Member(id: id, name: me!.name, momoNumber: number.trim().isEmpty ? null : number.trim());
+  }
+
+  /// Uploads one payment found during setup. Returns the server's status (inserted, duplicate, ...).
+  Future<String> importPayment(CatchUpItem item) async {
+    final res =
+        await client.rpc(
+              'ingest_momo_payment',
+              params: {
+                'p_amount': item.payment.amount,
+                'p_paid_at': item.paidAt.toUtc().toIso8601String(),
+                'p_sender_name': item.payment.name,
+                'p_sender_phone': item.payment.phone,
+                'p_tx_id': item.payment.txId,
+              },
+            )
+            as Map<String, dynamic>;
+    return res['status'] as String? ?? 'unknown';
+  }
 
   Map<String, dynamic> _rowOf(Vehicle v) => {
     'id': v.id,

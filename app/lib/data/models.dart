@@ -155,17 +155,30 @@ class Member {
 }
 
 class Device {
-  const Device({required this.id, required this.memberId, required this.isReader, this.lastCheckedAt});
+  const Device({
+    required this.id,
+    required this.memberId,
+    required this.isReader,
+    this.lastCheckedAt,
+    this.readerSender,
+    this.unreadableCount = 0,
+  });
   final String id;
   final String memberId;
   final bool isReader;
   final DateTime? lastCheckedAt;
+  final String? readerSender;
+
+  /// M-Money messages this Reader couldn't read (a sign the wording changed).
+  final int unreadableCount;
 
   factory Device.fromRow(Map<String, dynamic> r) => Device(
     id: r['id'] as String,
     memberId: r['member_id'] as String,
     isReader: r['is_reader'] as bool,
     lastCheckedAt: r['last_checked_at'] == null ? null : DateTime.parse(r['last_checked_at'] as String),
+    readerSender: r['reader_sender'] as String?,
+    unreadableCount: (r['unreadable_count'] as int?) ?? 0,
   );
 }
 

@@ -3,12 +3,15 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'config.dart';
 import 'data/repo.dart';
+import 'prefs.dart';
 import 'theme.dart';
 import 'ui/join_screen.dart';
+import 'ui/onboarding_screen.dart';
 import 'ui/shell.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await AppPrefs.load();
   if (Config.isConfigured) {
     await Supabase.initialize(url: Config.supabaseUrl, publishableKey: Config.supabasePublishableKey);
   }
@@ -27,7 +30,8 @@ class MotorTrackApp extends StatelessWidget {
   );
 }
 
-/// Signs the phone in, then shows Join or the app.
+/// First launch: the intro and permission pages. Then signs the phone in and
+/// shows Join or the app.
 class Gate extends StatefulWidget {
   const Gate({super.key});
 
@@ -39,6 +43,7 @@ class _GateState extends State<Gate> {
   final repo = Repo(Supabase.instance.client);
   late Future<void> _starting = _start();
   bool _joined = false;
+  bool _introDone = AppPrefs.onboardingDone;
 
   Future<void> _start() async {
     _joined = await repo.start() != null;
@@ -57,7 +62,12 @@ class _GateState extends State<Gate> {
   }
 
   @override
-  Widget build(BuildContext context) => FutureBuilder<void>(
+  Widget build(BuildContext context) {
+    if (!_introDone) return OnboardingScreen(onDone: () => setState(() => _introDone = true));
+    return _gate();
+  }
+
+  Widget _gate() => FutureBuilder<void>(
     future: _starting,
     builder: (context, snap) {
       if (snap.connectionState != ConnectionState.done) {

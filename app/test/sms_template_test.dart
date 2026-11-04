@@ -64,4 +64,20 @@ void main() {
     expect(SmsTemplate.looksLikeIncoming('Y\'ello! You have received 6000 RWF from ...'), isTrue);
     expect(SmsTemplate.looksLikeIncoming('Your bundle is active'), isFalse);
   });
+
+  test('the pattern handed to Android stays the same (ReaderParserTest.kt pins it too)', () {
+    expect(
+      SmsTemplate.mtnDefault.regexSource,
+      r'^\s*\s*You\s*have\s*received\s*([0-9][0-9,]*(?:\.[0-9]+)?)\s*RWF\s*from\s*(.+?)\s*\(\s*([*0-9][*0-9 ]*?)\s*\)'
+      r'\s*at\s*(\d{4}-\d{2}-\d{2}\s+\d{1,2}:\d{2}(?::\d{2})?)\s*\.\s*Balance:\s*(?:.*?)\s*RWF\.\s*FT\s*Id:\s*([A-Za-z0-9]+)\s*\.\s*',
+    );
+    expect(SmsTemplate.mtnDefault.groups, ['amount', 'name', 'phone', 'datetime', 'txid']);
+  });
+
+  test('raw fields give the exact text to highlight', () {
+    final f = mtn.rawFields(sample)!;
+    expect(f['amount'], '6000');
+    expect(f['name'], 'Xxx MUGABO');
+    expect(f['datetime'], '2026-11-02 19:57:24');
+  });
 }

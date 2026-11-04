@@ -4,8 +4,11 @@ import '../data/card_state.dart';
 import '../data/models.dart';
 import '../data/repo.dart';
 import '../format.dart';
+import '../prefs.dart';
+import '../reader/reader_service.dart';
 import '../theme.dart';
 import 'alerts_screen.dart';
+import 'reader_setup_screen.dart';
 import 'record_payment_sheet.dart';
 import 'vehicle_card.dart';
 import 'vehicle_detail_screen.dart';
@@ -93,6 +96,18 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 8),
                 _SummaryCard(summary: summary, deadline: deadline, readerMinutes: repo.readerMinutesAgo),
                 if (repo.loadError != null) ...[const SizedBox(height: 10), _Banner(text: repo.loadError!)],
+                if (ReaderService.supported &&
+                    AppPrefs.readerWanted &&
+                    repo.loaded &&
+                    !(repo.myDevice?.isReader ?? false)) ...[
+                  const SizedBox(height: 10),
+                  _ReaderPrompt(
+                    onSetUp: () => Navigator.of(
+                      context,
+                    ).push(MaterialPageRoute<bool>(builder: (_) => ReaderSetupScreen(repo: repo))),
+                    onNotNow: () => setState(() => AppPrefs.readerWanted = false),
+                  ),
+                ],
                 const SizedBox(height: 12),
                 TextField(
                   controller: _search,
@@ -347,6 +362,49 @@ class _Legend extends StatelessWidget {
       const SizedBox(width: 6),
       Text(text, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
     ],
+  );
+}
+
+/// Shown on the phone that said "this is the MoMo phone" during the intro,
+/// until its Reader is set up.
+class _ReaderPrompt extends StatelessWidget {
+  const _ReaderPrompt({required this.onSetUp, required this.onNotNow});
+  final VoidCallback onSetUp;
+  final VoidCallback onNotNow;
+
+  @override
+  Widget build(BuildContext context) => Card(
+    child: Padding(
+      padding: const EdgeInsets.fromLTRB(16, 14, 8, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.sms_outlined, size: 20),
+              SizedBox(width: 8),
+              Text('Finish setting up the Reader', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+            ],
+          ),
+          const SizedBox(height: 6),
+          const Padding(
+            padding: EdgeInsets.only(right: 8),
+            child: Text(
+              'Pick the M-Money sender and check the message format, so payments to this phone are recorded automatically.',
+              style: TextStyle(fontSize: 14, color: Palette.ink2, height: 1.45),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              FilledButton(onPressed: onSetUp, child: const Text('Set up')),
+              const SizedBox(width: 8),
+              TextButton(onPressed: onNotNow, child: const Text('Not now')),
+            ],
+          ),
+        ],
+      ),
+    ),
   );
 }
 

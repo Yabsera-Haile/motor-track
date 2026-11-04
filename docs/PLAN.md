@@ -2,7 +2,7 @@
 
 An internal Android app for tracking rent payments from the company's motorbikes. It reads M-Money SMS to mark payments, alerts the team when a driver is late or short, and reports on collections and bank deposits.
 
-Status (3 Nov 2026): building. Milestone 1 works against a local backend. The whole database engine (dues, oldest-debt-first, alerts, Reader matching) is built and tested. Waiting on the Supabase and Firebase projects (section 8).
+Status (4 Nov 2026): milestones 1 to 3 work on the real project. The app has an intro with permission pages, cash payments, vehicle detail and the M-Money Reader. The Reader is tested on the MoMo phone with real M-Money SMS: it imported a driver's 4 payments from 31 Oct to 3 Nov. Next: alerts (push), deposits and reports.
 
 ---
 
@@ -276,10 +276,10 @@ I can run these installs once you approve them, or you can do them yourself:
 
 | # | Milestone | Done when | Progress |
 |---|---|---|---|
-| 0 | Setup | Accounts ready, repo created, Flutter app runs on your phone, database tables created | **Partly done:** repo, app, database and tests run locally. Still to do: your Supabase/Firebase projects, install on a phone |
-| 1 | Join + vehicles | Join with team code. Add / edit / delete / activate vehicles. Search works. Data shows on every phone. | **Done locally:** checked in the browser, including live updates |
-| 2 | Dues + payments | Daily/weekly/monthly dues with rest days. Manual payments. Oldest-debt-first is correct (with tests). Today's total + card statuses. Vehicle detail. | **Engine and Home cards done.** Still to do: record-payment and vehicle-detail screens |
-| 3 | Reader | Setup wizard, receiver + inbox scan, offline queue, catch-up import. Tested with real M-Money SMS. | Parser done and tested |
+| 0 | Setup | Accounts ready, repo created, Flutter app runs on your phone, database tables created | **Done** |
+| 1 | Join + vehicles | Join with team code. Add / edit / delete / activate vehicles. Search works. Data shows on every phone. | **Done** |
+| 2 | Dues + payments | Daily/weekly/monthly dues with rest days. Manual payments. Oldest-debt-first is correct (with tests). Today's total + card statuses. Vehicle detail. | **Done** |
+| 3 | Reader | Setup wizard, receiver + inbox scan, offline queue, catch-up import. Tested with real M-Money SMS. | **Done** (0.3.1, tested on the MoMo phone) |
 | 4 | Alerts | Push on all phones: deadline, missed day, overpayment, Reader health. Alerts list. Message-driver sheet. | Database side done (alerts, push function) |
 | 5 | Deposits | Record deposits, see per-member holdings and history | Balances view done |
 | 6 | Reports | Collections + Deposits reports with date and vehicle filters | |

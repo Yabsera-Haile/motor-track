@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../data/repo.dart';
+import '../reader/reader_service.dart';
 import '../theme.dart';
+import 'reader_card.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key, required this.repo});
@@ -30,17 +32,12 @@ class SettingsScreen extends StatelessWidget {
             ),
           ),
           const _Heading('Reader'),
-          const Card(
-            child: ListTile(
-              title: Text('Read M-Money SMS on this phone'),
-              subtitle: Text('Coming in the Reader milestone.'),
-              trailing: Switch(value: false, onChanged: null),
-            ),
-          ),
+          ReaderCard(repo: repo),
           const _Heading('Alerts'),
           Card(
             child: Column(
               children: [
+                if (ReaderService.supported) ...[const _NotificationsRow(), const Divider()],
                 ListTile(title: const Text('Payment deadline'), trailing: Text(repo.settings.deadline)),
                 const Divider(),
                 ListTile(
@@ -69,7 +66,7 @@ class SettingsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 18),
           const Text(
-            'Motor Track 0.2.0 · MVP',
+            'Motor Track 0.3.1 · MVP',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 12, color: Palette.ink2),
           ),
@@ -94,4 +91,59 @@ class _Heading extends StatelessWidget {
   @override
   Widget build(BuildContext context) =>
       Padding(padding: const EdgeInsets.fromLTRB(2, 20, 0, 8), child: SectionLabel(text));
+}
+
+/// Whether this phone shows alert notifications, with a way to turn them on.
+class _NotificationsRow extends StatefulWidget {
+  const _NotificationsRow();
+
+  @override
+  State<_NotificationsRow> createState() => _NotificationsRowState();
+}
+
+class _NotificationsRowState extends State<_NotificationsRow> with WidgetsBindingObserver {
+  bool? _on;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _check();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _check();
+  }
+
+  Future<void> _check() async {
+    final on = await ReaderService.hasNotificationPermission();
+    if (mounted) setState(() => _on = on);
+  }
+
+  Future<void> _turnOn() async {
+    final on = await ReaderService.requestNotificationPermission();
+    // Refused before: Android won't ask again, so open the app's settings.
+    if (!on) await ReaderService.openAppSettings();
+    await _check();
+  }
+
+  @override
+  Widget build(BuildContext context) => ListTile(
+    title: const Text('Notifications on this phone'),
+    trailing: switch (_on) {
+      null => const SizedBox.shrink(),
+      true => const Text(
+        'On',
+        style: TextStyle(color: Palette.ok, fontWeight: FontWeight.w600),
+      ),
+      false => TextButton(onPressed: _turnOn, child: const Text('Turn on')),
+    },
+  );
 }
