@@ -137,7 +137,7 @@ class SettingsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 18),
           const Text(
-            'Motor Track 0.5.1 · MVP',
+            'Motor Track 0.6.1 · MVP',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 12, color: Palette.ink2),
           ),

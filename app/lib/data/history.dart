@@ -107,15 +107,18 @@ DayCell calendarCell(DateTime day, DueRow? due, Vehicle v, DateTime today) {
     if (v.frequency == Frequency.daily && v.restWeekdays.contains(day.weekday)) return DayCell.rest;
     return DayCell.future;
   }
-  return switch (due.status) {
-    DueStatus.onTime => DayCell.ok,
-    DueStatus.late => DayCell.late,
-    DueStatus.partial || DueStatus.partialOpen => DayCell.part,
-    DueStatus.unpaid => DayCell.miss,
-    DueStatus.open => DayCell.due,
-    DueStatus.rest => DayCell.rest,
-  };
+  return cellForStatus(due.status);
 }
+
+/// The square colour for a due's status (calendar, reports).
+DayCell cellForStatus(DueStatus status) => switch (status) {
+  DueStatus.onTime => DayCell.ok,
+  DueStatus.late => DayCell.late,
+  DueStatus.partial || DueStatus.partialOpen => DayCell.part,
+  DueStatus.unpaid => DayCell.miss,
+  DueStatus.open => DayCell.due,
+  DueStatus.rest => DayCell.rest,
+};
 
 /// The explanation shown when a calendar day is tapped.
 (String, String) describeDay(

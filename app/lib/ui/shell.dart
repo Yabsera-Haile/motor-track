@@ -5,11 +5,11 @@ import 'package:flutter/material.dart';
 import '../data/repo.dart';
 import '../push/push_service.dart';
 import '../reader/reader_service.dart';
-import '../theme.dart';
 import 'alerts_screen.dart';
 import 'deposits_screen.dart';
 import 'home_screen.dart';
 import 'message_driver_sheet.dart';
+import 'reports_screen.dart';
 import 'vehicle_detail_screen.dart';
 import 'settings_screen.dart';
 
@@ -99,12 +99,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       index: _tab,
       children: [
         HomeScreen(repo: widget.repo),
-        const _ComingSoon(
-          icon: Icons.bar_chart,
-          title: 'Reports',
-          text:
-              'Collection and deposit reports are the next milestones. Payments are already being recorded, so the reports will cover them.',
-        ),
+        ReportsScreen(repo: widget.repo, visible: _tab == 1),
         DepositsScreen(repo: widget.repo),
         SettingsScreen(repo: widget.repo),
       ],
@@ -125,31 +120,6 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
           label: 'Deposits',
         ),
         NavigationDestination(icon: Icon(Icons.tune_outlined), selectedIcon: Icon(Icons.tune), label: 'Settings'),
-      ],
-    ),
-  );
-}
-
-class _ComingSoon extends StatelessWidget {
-  const _ComingSoon({required this.icon, required this.title, required this.text});
-  final IconData icon;
-  final String title;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) => SafeArea(
-    child: ListView(
-      padding: const EdgeInsets.fromLTRB(16, 18, 16, 24),
-      children: [
-        Text(title, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700)),
-        const SizedBox(height: 40),
-        Icon(icon, size: 44, color: Palette.ink3),
-        const SizedBox(height: 12),
-        Text(
-          text,
-          textAlign: TextAlign.center,
-          style: const TextStyle(color: Palette.ink2, height: 1.45),
-        ),
       ],
     ),
   );

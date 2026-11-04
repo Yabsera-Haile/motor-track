@@ -89,7 +89,7 @@ class _DepositsScreenState extends State<DepositsScreen> {
                       children: [
                         for (final (i, d) in rows.indexed) ...[
                           if (i > 0) const Divider(),
-                          _DepositRow(repo: repo, deposit: d),
+                          DepositRow(repo: repo, deposit: d),
                         ],
                       ],
                     ),
@@ -198,8 +198,9 @@ class _HeldCard extends StatelessWidget {
   }
 }
 
-class _DepositRow extends StatelessWidget {
-  const _DepositRow({required this.repo, required this.deposit});
+/// One deposit in a list; tap for details and "Remove this deposit".
+class DepositRow extends StatelessWidget {
+  const DepositRow({super.key, required this.repo, required this.deposit});
   final Repo repo;
   final Deposit deposit;
 

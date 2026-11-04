@@ -2,7 +2,7 @@
 
 An internal Android app for tracking rent payments from the company's motorbikes. It reads M-Money SMS to mark payments, alerts the team when a driver is late or short, and reports on collections and bank deposits.
 
-Status (4 Nov 2026): milestones 1 to 3 work on the real project. The app has an intro with permission pages, cash payments, vehicle detail and the M-Money Reader. The Reader is tested on the MoMo phone with real M-Money SMS: it imported a driver's 4 payments from 31 Oct to 3 Nov. Version 0.4.1 adds push alerts on every phone (including "Payment received"), the Message driver sheet and editable alert settings and messages (tested end to end on an emulator through the live push function). Version 0.5.0 adds the Deposits tab (what each member holds, record and remove deposits, history), MoMo numbers in Settings and the Motor Track app icon. Version 0.5.1 fixes cards turning red 2 hours before the deadline on phones set to Rwanda time. Next: reports.
+Status (4 Nov 2026): milestones 1 to 3 work on the real project. The app has an intro with permission pages, cash payments, vehicle detail and the M-Money Reader. The Reader is tested on the MoMo phone with real M-Money SMS: it imported a driver's 4 payments from 31 Oct to 3 Nov. Version 0.4.1 adds push alerts on every phone (including "Payment received"), the Message driver sheet and editable alert settings and messages (tested end to end on an emulator through the live push function). Version 0.5.0 adds the Deposits tab (what each member holds, record and remove deposits, history), MoMo numbers in Settings and the Motor Track app icon. Version 0.5.1 fixes cards turning red 2 hours before the deadline on phones set to Rwanda time. Version 0.6.0 adds Reports: Collections (collected vs expected, rate, missed and late days, owed now, per-day chart, calendar, per-vehicle table) and Deposits (deposited, fees, not deposited, held per member, running chart, history), for today, this week, this month, any month or a custom range, with a vehicle filter (deleted vehicles left out, switched-off ones kept). Version 0.6.1: deleted vehicles leave reports and held money, switched-off ones stay in reports, and changing the deadline re-judges today's late alert. Next: release on all 3 phones.
 
 ---
 
@@ -21,7 +21,7 @@ Status (4 Nov 2026): milestones 1 to 3 work on the real project. The app has an 
 | Contract type | Ongoing rental with no target or end date. |
 | Joining | **Name + shared team code.** No password, no account. |
 | Language | English screens. Messages to drivers are in **English and Kinyarwanda**. Built so Kinyarwanda screens can be added later. |
-| Delete vehicle | *(My default, easy to change)* Deleting hides the vehicle but **keeps its payments in reports**. To pause a vehicle, use the Active switch. |
+| Delete vehicle | Deleting is for a vehicle added by mistake: it **leaves the list, the reports and members' held money, with its payments**. To stop a vehicle but keep its history, use the Active switch (switched-off vehicles stay in reports). |
 
 ---
 
@@ -134,7 +134,7 @@ For each vehicle, payments are applied in time order to dues in date order:
 | Overpayment | When a payment leaves credit | "RAD 123 A, Jean sent 12,000. 6,000 kept as credit" |
 | Payment received | Each new payment (MoMo: every phone; cash: every phone but the one that recorded it). Off switch in Settings. A payment that leaves credit gets the Overpayment one instead | "RAD 123 A · Jean sent 6,000 RWF. All paid up." |
 
-A day only alerts if its due already existed before that day's deadline. So a bike registered at 21:00, or added with a past start date, never alerts for those days. Alerts resolve on their own once the day is paid.
+A day only alerts if its due already existed before that day's deadline. So a bike registered at 21:00, or added with a past start date, never alerts for those days. Alerts resolve on their own once the day is paid. Each day alerts once per check, but changing the deadline (or the Day missed time) in Settings re-judges today: if the new time hasn't come yet, today's alert is cleared and fires again at the new time.
 
 Every alert is also saved in the in-app **Alerts** list. Tapping one gives a **Message driver** button (see 4.6).
 
@@ -283,7 +283,7 @@ I can run these installs once you approve them, or you can do them yourself:
 | 3 | Reader | Setup wizard, receiver + inbox scan, offline queue, catch-up import. Tested with real M-Money SMS. | **Done** (0.3.1, tested on the MoMo phone) |
 | 4 | Alerts | Push on all phones: deadline, missed day, overpayment, Reader health. Alerts list. Message-driver sheet. | **Done** (0.4.1). Still to do: a native speaker checks the Kinyarwanda, and a test notification on all 3 phones |
 | 5 | Deposits | Record deposits, see per-member holdings and history | **Done** (0.5.0) |
-| 6 | Reports | Collections + Deposits reports with date and vehicle filters | |
+| 6 | Reports | Collections + Deposits reports with date and vehicle filters | **Done** (0.6.0) |
 | 7 | Release | Battery-saver testing on real phones, signed APK, installed on all 3 phones | |
 
 **Tests:** the SMS parser (many sample messages, including `Xxx` names and odd spacing), the debt allocation (late, partial, overpaid, rest days, deactivated), and the report numbers.

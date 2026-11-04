@@ -455,7 +455,8 @@ Future<void> confirmDelete(BuildContext context, Repo repo, Vehicle v) async {
     builder: (context) => AlertDialog(
       title: Text('Delete ${v.plate}?'),
       content: const Text(
-        'It disappears from the list, but its payments stay in reports.\n\nTo pause a vehicle instead, use its switch.',
+        'Only for a vehicle added by mistake: it disappears from the list, the reports and deposits, '
+        'with its payments.\n\nTo stop a vehicle but keep its history, turn its switch off instead.',
       ),
       actions: [
         TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),

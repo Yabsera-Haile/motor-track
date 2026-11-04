@@ -10,6 +10,7 @@ import '../reader/reader_service.dart';
 import 'history.dart';
 import 'messages.dart';
 import 'models.dart';
+import 'report.dart';
 
 export 'history.dart' show DueRow, PaymentRow, PaymentSource;
 
@@ -193,7 +194,8 @@ class Repo extends ChangeNotifier {
     await load();
   }
 
-  /// Hides the vehicle. Its payments stay in reports.
+  /// For a vehicle added by mistake: it leaves the list, reports and held
+  /// money, with its payments. Switching it off is how to pause one.
   Future<void> deleteVehicle(Vehicle v) async {
     await client
         .from('vehicles')
@@ -274,6 +276,72 @@ class Repo extends ChangeNotifier {
   }
 
   String memberName(String? id) => members.where((m) => m.id == id).map((m) => m.name).firstOrNull ?? 'someone';
+
+  // ---- Reports ----
+
+  /// Dues, payments and deposits from [from] to [to] (Kigali dates), and every
+  /// vehicle that isn't deleted (switched-off ones included).
+  Future<ReportData> reportData(DateTime from, DateTime to) async {
+    final fromIso = isoDate(from), toIso = isoDate(to);
+    // Kigali midnight at both ends, as UTC instants.
+    final start = DateTime.utc(from.year, from.month, from.day).subtract(const Duration(hours: 2));
+    final end = DateTime.utc(to.year, to.month, to.day + 1).subtract(const Duration(hours: 2));
+    final results = await Future.wait<List<Map<String, dynamic>>>([
+      client.from('vehicles').select(ReportVehicle.columns).isFilter('deleted_at', null),
+      _allPages(
+        (a, b) => client
+            .from('v_dues')
+            .select(ReportDue.columns)
+            .gte('due_date', fromIso)
+            .lte('due_date', toIso)
+            .order('due_date')
+            .order('vehicle_id')
+            .range(a, b),
+      ),
+      _allPages(
+        (a, b) => client
+            .from('payments')
+            .select('id, ${ReportPayment.columns}')
+            .isFilter('deleted_at', null)
+            .gte('paid_at', start.toIso8601String())
+            .lt('paid_at', end.toIso8601String())
+            .order('paid_at')
+            .order('id')
+            .range(a, b),
+      ),
+      _allPages(
+        (a, b) => client
+            .from('deposits')
+            .select(Deposit.columns)
+            .isFilter('deleted_at', null)
+            .gte('deposited_on', fromIso)
+            .lte('deposited_on', toIso)
+            .order('deposited_on', ascending: false)
+            .order('id')
+            .range(a, b),
+      ),
+    ]);
+    return ReportData(
+      vehicles: results[0].map(ReportVehicle.fromRow).toList(),
+      dues: results[1].map(ReportDue.fromRow).toList(),
+      payments: results[2].map(ReportPayment.fromRow).toList(),
+      deposits: results[3].map(Deposit.fromRow).toList(),
+    );
+  }
+
+  /// The server returns at most 1,000 rows per request; a year of days for
+  /// three bikes is more than that.
+  Future<List<Map<String, dynamic>>> _allPages(
+    Future<List<Map<String, dynamic>>> Function(int from, int to) page,
+  ) async {
+    const size = 1000;
+    final all = <Map<String, dynamic>>[];
+    for (var i = 0; ; i += size) {
+      final rows = await page(i, i + size - 1);
+      all.addAll(rows);
+      if (rows.length < size) return all;
+    }
+  }
 
   // ---- Reader ----
 
