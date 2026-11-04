@@ -130,7 +130,12 @@ class _RecordPaymentSheetState extends State<_RecordPaymentSheet> {
             TextField(
               controller: _amount,
               keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly, ThousandsFormatter()],
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                // Up to 999,999,999 RWF.
+                LengthLimitingTextInputFormatter(9),
+                ThousandsFormatter(),
+              ],
               onChanged: (_) => setState(() {}),
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, fontFeatures: tabular),
               decoration: InputDecoration(labelText: 'Amount', suffixText: 'RWF', errorText: _error),

@@ -7,6 +7,7 @@ import '../push/push_service.dart';
 import '../reader/reader_service.dart';
 import '../theme.dart';
 import 'alerts_screen.dart';
+import 'deposits_screen.dart';
 import 'home_screen.dart';
 import 'message_driver_sheet.dart';
 import 'vehicle_detail_screen.dart';
@@ -104,11 +105,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
           text:
               'Collection and deposit reports are the next milestones. Payments are already being recorded, so the reports will cover them.',
         ),
-        const _ComingSoon(
-          icon: Icons.account_balance,
-          title: 'Deposits',
-          text: 'Recording bank deposits comes in a later milestone.',
-        ),
+        DepositsScreen(repo: widget.repo),
         SettingsScreen(repo: widget.repo),
       ],
     ),

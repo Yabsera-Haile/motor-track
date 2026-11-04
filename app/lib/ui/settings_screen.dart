@@ -127,10 +127,9 @@ class SettingsScreen extends StatelessWidget {
                   if (i > 0) const Divider(),
                   ListTile(
                     title: Text(m.name),
-                    trailing: Text(
-                      m.momoNumber == null ? 'no MoMo wallet set' : 'MoMo ${m.momoNumber}',
-                      style: const TextStyle(color: Palette.ink2),
-                    ),
+                    subtitle: Text(m.momoNumber == null ? 'No MoMo number yet' : 'MoMo ${m.momoNumber}'),
+                    trailing: const Icon(Icons.edit_outlined, size: 20, color: Palette.ink2),
+                    onTap: () => _editMomo(context, m),
                   ),
                 ],
               ],
@@ -138,7 +137,7 @@ class SettingsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 18),
           const Text(
-            'Motor Track 0.4.2 · MVP',
+            'Motor Track 0.5.1 · MVP',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 12, color: Palette.ink2),
           ),
@@ -146,6 +145,29 @@ class SettingsScreen extends StatelessWidget {
       ),
     ),
   );
+
+  Future<void> _editMomo(BuildContext context, Member m) async {
+    final controller = TextEditingController(text: m.momoNumber ?? '');
+    final number = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("${m.name}'s MoMo number"),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          keyboardType: TextInputType.phone,
+          decoration: const InputDecoration(hintText: 'e.g. 0788 123 456'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(context, controller.text), child: const Text('Save')),
+        ],
+      ),
+    );
+    // Not disposed here: the dialog's closing animation still uses it.
+    if (number == null || !context.mounted) return;
+    await _save(context, () => repo.setMomoNumber(m.id, number));
+  }
 
   Future<void> _pickDeadline(BuildContext context) async {
     final parts = repo.settings.deadline.split(':');

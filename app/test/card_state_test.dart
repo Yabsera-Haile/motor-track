@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:motor_track/data/card_state.dart';
 import 'package:motor_track/data/models.dart';
+import 'package:motor_track/format.dart';
 
 Vehicle vehicle({bool active = true, Frequency frequency = Frequency.daily}) => Vehicle(
   id: 'v',
@@ -78,11 +79,34 @@ void main() {
     expect(s.note, 'Not paid by 20:00');
   });
 
+  test('the deadline is read in Kigali time, as kigaliNow() gives it', () {
+    // kigaliNow() is a UTC DateTime that reads as Kigali time. 19:34 UTC is
+    // 21:34 in Kigali: still before a 22:00 deadline, whatever the phone's zone.
+    CardState at(int utcHour, int utcMinute) => describeCard(
+      vehicle(),
+      today(),
+      deadline: '22:00',
+      today: day,
+      now: toKigali(DateTime.utc(2026, 11, 3, utcHour, utcMinute)),
+    );
+    expect(at(19, 34).note, 'Due by 22:00');
+    expect(at(19, 34).tone, Tone.mute);
+    expect(at(20, 0).note, 'Not paid by 22:00');
+    expect(at(20, 0).tone, Tone.bad);
+  });
+
   test('money sent today that went to an older day is explained', () {
     final s = describe(vehicle(), today(sent: 6000));
-    expect(s.kind, CardKind.partial);
-    expect(s.detail, '0 of 6,000');
+    expect(s.kind, CardKind.unpaid);
+    expect('${s.label} · ${s.detail}', 'Not paid yet · 0 of 6,000');
     expect(s.note, '6,000 sent today paid older days first');
+  });
+
+  test('...and what is still owed from before', () {
+    final s = describe(vehicle(), today(sent: 6000, overdue: 6000, oldest: DateTime(2026, 11, 2)));
+    expect('${s.label} · ${s.detail}', 'Not paid yet · 0 of 6,000');
+    expect(s.note, '6,000 sent today paid older days first. Also owes 6,000 from Mon 2 Nov');
+    expect(s.tone, Tone.bad);
   });
 
   test('covered by credit', () {

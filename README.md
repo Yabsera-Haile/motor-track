@@ -37,6 +37,9 @@ cd app && flutter run --dart-define-from-file=env/local.json
 
 ## Build the Android app
 
+The app icon (Android, iOS, web) comes from `tools/make_icons.py`, which draws the Material Icons motorbike in white on the app's near-black. Run it from `app/` with the path to `materialicons-regular.otf` in the Flutter SDK (`bin/cache/artifacts/material_fonts/`) and a path for a preview image.
+
+
 These files stay on the build PC and are not in git. Keep a backup of the first two: every update must be signed with the same key.
 
 | File | What |

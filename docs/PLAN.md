@@ -2,7 +2,7 @@
 
 An internal Android app for tracking rent payments from the company's motorbikes. It reads M-Money SMS to mark payments, alerts the team when a driver is late or short, and reports on collections and bank deposits.
 
-Status (4 Nov 2026): milestones 1 to 3 work on the real project. The app has an intro with permission pages, cash payments, vehicle detail and the M-Money Reader. The Reader is tested on the MoMo phone with real M-Money SMS: it imported a driver's 4 payments from 31 Oct to 3 Nov. Version 0.4.1 adds push alerts on every phone (including "Payment received"), the Message driver sheet and editable alert settings and messages (tested end to end on an emulator through the live push function). Next: deposits and reports.
+Status (4 Nov 2026): milestones 1 to 3 work on the real project. The app has an intro with permission pages, cash payments, vehicle detail and the M-Money Reader. The Reader is tested on the MoMo phone with real M-Money SMS: it imported a driver's 4 payments from 31 Oct to 3 Nov. Version 0.4.1 adds push alerts on every phone (including "Payment received"), the Message driver sheet and editable alert settings and messages (tested end to end on an emulator through the live push function). Version 0.5.0 adds the Deposits tab (what each member holds, record and remove deposits, history), MoMo numbers in Settings and the Motor Track app icon. Version 0.5.1 fixes cards turning red 2 hours before the deadline on phones set to Rwanda time. Next: reports.
 
 ---
 
@@ -282,7 +282,7 @@ I can run these installs once you approve them, or you can do them yourself:
 | 2 | Dues + payments | Daily/weekly/monthly dues with rest days. Manual payments. Oldest-debt-first is correct (with tests). Today's total + card statuses. Vehicle detail. | **Done** |
 | 3 | Reader | Setup wizard, receiver + inbox scan, offline queue, catch-up import. Tested with real M-Money SMS. | **Done** (0.3.1, tested on the MoMo phone) |
 | 4 | Alerts | Push on all phones: deadline, missed day, overpayment, Reader health. Alerts list. Message-driver sheet. | **Done** (0.4.1). Still to do: a native speaker checks the Kinyarwanda, and a test notification on all 3 phones |
-| 5 | Deposits | Record deposits, see per-member holdings and history | Balances view done |
+| 5 | Deposits | Record deposits, see per-member holdings and history | **Done** (0.5.0) |
 | 6 | Reports | Collections + Deposits reports with date and vehicle filters | |
 | 7 | Release | Battery-saver testing on real phones, signed APK, installed on all 3 phones | |
 

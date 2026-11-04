@@ -154,6 +154,72 @@ class Member {
       Member(id: r['id'] as String, name: r['name'] as String, momoNumber: r['momo_number'] as String?);
 }
 
+/// What one member has collected and deposited (view v_member_balances).
+class MemberBalance {
+  const MemberBalance({
+    required this.memberId,
+    required this.name,
+    required this.received,
+    required this.deposited,
+    required this.fees,
+    required this.held,
+  });
+
+  final String memberId;
+  final String name;
+  final int received;
+  final int deposited;
+  final int fees;
+
+  /// Collected minus deposited minus fees: money still with this member.
+  final int held;
+
+  factory MemberBalance.fromRow(Map<String, dynamic> r) => MemberBalance(
+    memberId: r['member_id'] as String,
+    name: r['name'] as String,
+    received: (r['received'] as num).toInt(),
+    deposited: (r['deposited'] as num).toInt(),
+    fees: (r['fees'] as num).toInt(),
+    held: (r['held'] as num).toInt(),
+  );
+}
+
+/// One bank deposit.
+class Deposit {
+  const Deposit({
+    required this.id,
+    required this.memberId,
+    required this.amount,
+    required this.fee,
+    required this.depositedOn,
+    this.reference,
+    this.note,
+    this.recordedById,
+  });
+
+  final String id;
+  final String memberId;
+  final int amount;
+  final int fee;
+  final DateTime depositedOn;
+  final String? reference;
+  final String? note;
+  final String? recordedById;
+
+  static const columns = 'id, member_id, amount, fee, deposited_on, reference, note, recorded_by_member_id';
+
+  factory Deposit.fromRow(Map<String, dynamic> r) => Deposit(
+    id: r['id'] as String,
+    memberId: r['member_id'] as String,
+    amount: (r['amount'] as num).toInt(),
+    fee: (r['fee'] as num).toInt(),
+    depositedOn: parseDate(r['deposited_on'] as String),
+    reference: r['reference'] as String?,
+    note: r['note'] as String?,
+    recordedById: r['recorded_by_member_id'] as String?,
+  );
+}
+
 class Device {
   const Device({
     required this.id,

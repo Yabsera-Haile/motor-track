@@ -18,7 +18,8 @@ class CardState {
   final Tone noteTone;
 }
 
-/// [now] is Kigali wall-clock time; it decides whether the deadline has passed.
+/// [now] is Kigali wall-clock time (as kigaliNow() gives it); only its
+/// date and clock fields are used to decide whether the deadline has passed.
 CardState describeCard(Vehicle v, VehicleToday? t, {required String deadline, DateTime? today, DateTime? now}) {
   today ??= kigaliToday();
   now ??= kigaliNow();
@@ -84,7 +85,9 @@ CardState describeCard(Vehicle v, VehicleToday? t, {required String deadline, Da
       ? '${rwf(t.sentToday)} sent ${v.periodWord} paid older days first'
       : null;
 
-  if (t.currentPaid > 0 || t.sentToday > 0) {
+  // "Partial" only when part of the current amount is paid. Money that all
+  // went to older days leaves today "Not paid yet", with a note saying so.
+  if (t.currentPaid > 0) {
     return CardState(
       CardKind.partial,
       'Partial',
@@ -97,7 +100,11 @@ CardState describeCard(Vehicle v, VehicleToday? t, {required String deadline, Da
 
   final [h, m] = deadline.split(':').map(int.parse).toList();
   final dueDay = t.currentDueDate!;
-  final late = !now.isBefore(DateTime(dueDay.year, dueDay.month, dueDay.day, h, m));
+  // Compare clock readings, not moments: kigaliNow() is a UTC DateTime that
+  // reads as Kigali time, while dueDay is a plain local date. Building both
+  // the same way keeps the phone's own time zone out of it.
+  final nowAt = DateTime.utc(now.year, now.month, now.day, now.hour, now.minute, now.second);
+  final late = !nowAt.isBefore(DateTime.utc(dueDay.year, dueDay.month, dueDay.day, h, m));
   final dueLine = late
       ? 'Not paid by $deadline'
       : v.frequency == Frequency.daily
@@ -105,7 +112,12 @@ CardState describeCard(Vehicle v, VehicleToday? t, {required String deadline, Da
       : 'Due ${shortDate(dueDay)} by $deadline';
   // Grey until the deadline; red once it has passed or older days are unpaid.
   final tone = owes != null || late ? Tone.bad : Tone.mute;
-  return CardState(CardKind.unpaid, 'Not paid yet', detail, owes ?? dueLine, tone, tone);
+  final note = wentToOlder == null
+      ? owes ?? dueLine
+      : owes == null
+      ? wentToOlder
+      : '$wentToOlder. $owes';
+  return CardState(CardKind.unpaid, 'Not paid yet', detail, note, tone, tone);
 }
 
 /// One square in the "last 7 days" strip.

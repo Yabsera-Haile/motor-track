@@ -29,6 +29,7 @@ class Repo extends ChangeNotifier {
 
   Member? me;
   List<Member> members = const [];
+  List<MemberBalance> balances = const [];
   List<Vehicle> vehicles = const [];
   Map<String, VehicleToday> today = const {};
   Map<String, List<DueDay>> recentDues = const {};
@@ -92,6 +93,7 @@ class Repo extends ChangeNotifier {
             .gt('created_at', DateTime.now().toUtc().subtract(const Duration(days: 2)).toIso8601String()),
         // Before the alerts migration this table doesn't exist: use the built-in wording.
         client.from('message_templates').select().then<List<dynamic>>((r) => r, onError: (Object _) => const []),
+        client.from('v_member_balances').select(),
       ]);
       // Active vehicles first, then by plate.
       vehicles = (results[0] as List).map((r) => Vehicle.fromRow(r)).toList()
@@ -103,6 +105,8 @@ class Repo extends ChangeNotifier {
         (recentDues[d.vehicleId] ??= []).add(d);
       }
       members = (results[3] as List).map((r) => Member.fromRow(r)).toList();
+      balances = (results[8] as List).map((r) => MemberBalance.fromRow(r as Map<String, dynamic>)).toList()
+        ..sort((a, b) => b.held.compareTo(a.held));
       devices = (results[4] as List).map((r) => Device.fromRow(r)).toList();
       final s = results[5] as Map<String, dynamic>?;
       settings = s == null ? TeamSettings.fallback : TeamSettings.fromRow(s);
@@ -301,6 +305,58 @@ class Repo extends ChangeNotifier {
 
   Future<void> disableReader() async {
     await client.rpc('disable_reader');
+    await load();
+  }
+
+  // ---- Deposits ----
+
+  /// Money collected that no one has deposited yet.
+  int get notYetDeposited => balances.fold(0, (t, b) => t + b.held);
+
+  int heldBy(String? memberId) => balances.where((b) => b.memberId == memberId).map((b) => b.held).firstOrNull ?? 0;
+
+  Future<List<Deposit>> deposits({int limit = 200}) async {
+    final rows = await client
+        .from('deposits')
+        .select(Deposit.columns)
+        .isFilter('deleted_at', null)
+        .order('deposited_on', ascending: false)
+        .order('created_at', ascending: false)
+        .limit(limit);
+    return rows.map(Deposit.fromRow).toList();
+  }
+
+  Future<void> recordDeposit({
+    required String memberId,
+    required int amount,
+    required int fee,
+    required DateTime depositedOn,
+    String? reference,
+    String? note,
+  }) async {
+    String? clean(String? s) => (s ?? '').trim().isEmpty ? null : s!.trim();
+    await client.from('deposits').insert({
+      'member_id': memberId,
+      'amount': amount,
+      'fee': fee,
+      'deposited_on': isoDate(depositedOn),
+      'reference': clean(reference),
+      'note': clean(note),
+    });
+    await load();
+  }
+
+  /// Removes a deposit recorded by mistake. The money counts as held again.
+  Future<void> removeDeposit(String id) async {
+    await client.from('deposits').update({'deleted_at': DateTime.now().toUtc().toIso8601String()}).eq('id', id);
+    await load();
+  }
+
+  /// Any member's MoMo number (Settings → Team).
+  Future<void> setMomoNumber(String memberId, String number) async {
+    final n = number.trim();
+    await client.from('members').update({'momo_number': n.isEmpty ? null : n}).eq('id', memberId);
+    if (memberId == me?.id) me = Member(id: memberId, name: me!.name, momoNumber: n.isEmpty ? null : n);
     await load();
   }
 
