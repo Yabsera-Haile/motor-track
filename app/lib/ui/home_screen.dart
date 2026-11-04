@@ -8,6 +8,7 @@ import '../prefs.dart';
 import '../reader/reader_service.dart';
 import '../theme.dart';
 import 'alerts_screen.dart';
+import 'message_driver_sheet.dart';
 import 'reader_setup_screen.dart';
 import 'record_payment_sheet.dart';
 import 'vehicle_card.dart';
@@ -180,6 +181,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                         onRecordPayment: () => showRecordPayment(context, repo, v),
+                        onMessage: () => showMessageDriver(context, repo, v),
                         onToggle: (on) => repo.setActive(v, on),
                         onEdit: () => _openForm(v),
                         onDelete: () => confirmDelete(context, repo, v),
@@ -219,7 +221,7 @@ class _Header extends StatelessWidget {
           ),
         ),
         IconButton(
-          tooltip: alerts == 0 ? 'Alerts' : 'Alerts, $alerts open',
+          tooltip: alerts == 0 ? 'Alerts' : 'Alerts, $alerts new',
           onPressed: onAlerts,
           icon: Badge(
             isLabelVisible: alerts > 0,

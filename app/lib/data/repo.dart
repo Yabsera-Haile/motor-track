@@ -4,8 +4,11 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../format.dart';
+import '../prefs.dart';
+import '../push/push_service.dart';
 import '../reader/reader_service.dart';
 import 'history.dart';
+import 'messages.dart';
 import 'models.dart';
 
 export 'history.dart' show DueRow, PaymentRow, PaymentSource;
@@ -32,6 +35,7 @@ class Repo extends ChangeNotifier {
   List<Device> devices = const [];
   TeamSettings settings = TeamSettings.fallback;
   int openAlerts = 0;
+  Map<MessageKind, MessageTemplate> messageTemplates = MessageTemplate.defaults;
   bool loaded = false;
   String? loadError;
 
@@ -70,7 +74,7 @@ class Repo extends ChangeNotifier {
   Future<void> load() async {
     final day = kigaliToday();
     try {
-      final results = await Future.wait([
+      final results = await Future.wait<dynamic>([
         client.from('vehicles').select().isFilter('deleted_at', null),
         client.from('v_vehicle_today').select(),
         client
@@ -83,9 +87,11 @@ class Repo extends ChangeNotifier {
         client.from('settings').select().maybeSingle(),
         client
             .from('alerts')
-            .select('id')
+            .select('created_at')
             .isFilter('resolved_at', null)
-            .gte('created_at', DateTime.now().toUtc().subtract(const Duration(days: 2)).toIso8601String()),
+            .gt('created_at', DateTime.now().toUtc().subtract(const Duration(days: 2)).toIso8601String()),
+        // Before the alerts migration this table doesn't exist: use the built-in wording.
+        client.from('message_templates').select().then<List<dynamic>>((r) => r, onError: (Object _) => const []),
       ]);
       // Active vehicles first, then by plate.
       vehicles = (results[0] as List).map((r) => Vehicle.fromRow(r)).toList()
@@ -100,7 +106,14 @@ class Repo extends ChangeNotifier {
       devices = (results[4] as List).map((r) => Device.fromRow(r)).toList();
       final s = results[5] as Map<String, dynamic>?;
       settings = s == null ? TeamSettings.fallback : TeamSettings.fromRow(s);
-      openAlerts = (results[6] as List).length;
+      // Compared here, not in the query: the list may have been opened while this loaded.
+      _recentOpenAlerts = [for (final r in results[6] as List) DateTime.parse(r['created_at'] as String)];
+      openAlerts = _unseenCount;
+      messageTemplates = {
+        ...MessageTemplate.defaults,
+        for (final r in results[7] as List)
+          if (MessageTemplate.fromRow(r as Map<String, dynamic>) case final t?) t.kind: t,
+      };
       loadError = null;
       // Keep this phone's Reader looking for the current usernames.
       if (ReaderService.supported && myDevice?.isReader == true) {
@@ -117,7 +130,17 @@ class Repo extends ChangeNotifier {
   void subscribe() {
     if (_channel != null) return;
     var channel = client.channel('team-changes');
-    for (final table in ['vehicles', 'payments', 'dues', 'alerts', 'deposits', 'members', 'devices', 'settings']) {
+    for (final table in [
+      'vehicles',
+      'payments',
+      'dues',
+      'alerts',
+      'deposits',
+      'members',
+      'devices',
+      'settings',
+      'message_templates',
+    ]) {
       channel = channel.onPostgresChanges(
         event: PostgresChangeEvent.all,
         schema: 'public',
@@ -303,6 +326,77 @@ class Repo extends ChangeNotifier {
             )
             as Map<String, dynamic>;
     return res['status'] as String? ?? 'unknown';
+  }
+
+  // ---- Alerts ----
+
+  /// When the open alerts of the last two days were created.
+  List<DateTime> _recentOpenAlerts = const [];
+
+  /// The bell counts open alerts this phone hasn't seen in the list yet.
+  int get _unseenCount {
+    final seen = AppPrefs.alertsSeenAt;
+    return seen == null ? _recentOpenAlerts.length : _recentOpenAlerts.where((t) => t.isAfter(seen)).length;
+  }
+
+  /// The Alerts list was opened and showed alerts up to [newest].
+  void markAlertsSeen(DateTime newest) {
+    final seen = AppPrefs.alertsSeenAt;
+    if (seen != null && !newest.isAfter(seen)) return;
+    AppPrefs.alertsSeenAt = newest;
+    final unseen = _unseenCount;
+    if (openAlerts != unseen) {
+      openAlerts = unseen;
+      notifyListeners();
+    }
+  }
+
+  Vehicle? vehicleById(String? id) => vehicles.where((v) => v.id == id).firstOrNull;
+
+  Future<List<AlertItem>> alerts({int limit = 100}) async {
+    final rows = await client
+        .from('alerts')
+        .select(AlertItem.columns)
+        .order('created_at', ascending: false)
+        .limit(limit);
+    return rows.map(AlertItem.fromRow).toList();
+  }
+
+  Future<AlertItem?> alert(String id) async {
+    final row = await client.from('alerts').select(AlertItem.columns).eq('id', id).maybeSingle();
+    return row == null ? null : AlertItem.fromRow(row);
+  }
+
+  /// Tells the database where to send this phone's notifications. Cheap to
+  /// repeat: the server only writes when the token changed.
+  Future<void> registerPush() async {
+    if (me == null) return;
+    final token = await PushService.token();
+    if (token == null) return;
+    try {
+      await client.rpc('register_push', params: {'p_token': token, 'p_platform': 'android'});
+    } catch (e) {
+      debugPrint('register_push failed: $e');
+    }
+  }
+
+  /// One notification to every phone. Returns (set up on the server, phones that can receive).
+  Future<(bool, int)> sendTestPush() async {
+    final res = await client.rpc('send_test_push') as Map<String, dynamic>;
+    return (res['ready'] == true, (res['phones'] as num?)?.toInt() ?? 0);
+  }
+
+  Future<void> updateSettings(Map<String, dynamic> values) async {
+    await client.from('settings').update(values).eq('id', true);
+    await load();
+  }
+
+  Future<void> saveMessageTemplate(MessageTemplate t) async {
+    await client
+        .from('message_templates')
+        .update({'english': t.english.trim(), 'kinyarwanda': t.kinyarwanda.trim()})
+        .eq('kind', t.kind.name);
+    await load();
   }
 
   Map<String, dynamic> _rowOf(Vehicle v) => {

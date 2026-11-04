@@ -45,7 +45,7 @@ select is((select held_by_member_id from public.payments where tx_id = 'FT-1'),
 select is((select unreadable_count from public.devices), 2, 'sync records messages that could not be read');
 
 -- A quiet Reader raises an alert; the next sync resolves it.
-update public.devices set last_checked_at = now() - interval '7 hours';
+update public.devices set last_checked_at = '2026-11-04 09:00+02';
 set local app.now = '2026-11-04 16:00+02';
 select private.tick();
 select is((select count(*)::int from public.alerts where type = 'reader_silent' and resolved_at is null), 1, 'quiet Reader alerts');

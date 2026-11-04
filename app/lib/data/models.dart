@@ -183,14 +183,78 @@ class Device {
 }
 
 class TeamSettings {
-  const TeamSettings({required this.deadline, required this.missedAlertOffset});
+  const TeamSettings({
+    required this.deadline,
+    required this.missedAlertOffset,
+    this.overpayAlerts = true,
+    this.readerSilenceHours = 6,
+    this.paymentPush = true,
+  });
   final String deadline; // "20:00"
   final String missedAlertOffset; // Postgres interval text, e.g. "07:00:00"
+  final bool overpayAlerts;
+  final int readerSilenceHours;
+  final bool paymentPush;
 
   static const fallback = TeamSettings(deadline: '20:00', missedAlertOffset: '07:00:00');
+
+  /// The choices offered for the "Day missed" alert, as Postgres intervals.
+  static const missedChoices = {
+    '-01:00:00': '23:00 same day',
+    '00:00:00': 'Midnight',
+    '07:00:00': '07:00 next day',
+    '08:00:00': '08:00 next day',
+  };
+
+  static const silenceChoices = [3, 6, 12, 24];
+
+  String get missedLabel => missedChoices[missedAlertOffset] ?? missedAlertOffset;
 
   factory TeamSettings.fromRow(Map<String, dynamic> r) => TeamSettings(
     deadline: (r['deadline_time'] as String).substring(0, 5),
     missedAlertOffset: r['missed_alert_offset'] as String,
+    overpayAlerts: r['overpay_alerts'] as bool? ?? true,
+    readerSilenceHours: (r['reader_silence_hours'] as num?)?.toInt() ?? 6,
+    paymentPush: r['payment_push'] as bool? ?? true,
+  );
+}
+
+/// One row of the Alerts list.
+class AlertItem {
+  const AlertItem({
+    required this.id,
+    required this.type,
+    required this.title,
+    required this.body,
+    required this.createdAt,
+    required this.resolvedAt,
+    required this.vehicleId,
+    required this.data,
+  });
+
+  final String id;
+  final String type;
+  final String title;
+  final String body;
+  final DateTime createdAt;
+  final DateTime? resolvedAt;
+  final String? vehicleId;
+  final Map<String, dynamic> data;
+
+  static const columns = 'id, type, title, body, created_at, resolved_at, vehicle_id, data';
+
+  /// About one driver, so "Message driver" makes sense.
+  bool get aboutDriver =>
+      vehicleId != null && const {'unpaid_deadline', 'short_deadline', 'missed_day', 'overpayment'}.contains(type);
+
+  factory AlertItem.fromRow(Map<String, dynamic> r) => AlertItem(
+    id: r['id'] as String,
+    type: r['type'] as String,
+    title: r['title'] as String,
+    body: r['body'] as String,
+    createdAt: DateTime.parse(r['created_at'] as String),
+    resolvedAt: r['resolved_at'] == null ? null : DateTime.parse(r['resolved_at'] as String),
+    vehicleId: r['vehicle_id'] as String?,
+    data: (r['data'] as Map?)?.cast<String, dynamic>() ?? const {},
   );
 }

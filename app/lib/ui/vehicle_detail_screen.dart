@@ -7,6 +7,7 @@ import '../data/repo.dart';
 import '../format.dart';
 import '../theme.dart';
 import 'home_screen.dart' show confirmDelete;
+import 'message_driver_sheet.dart';
 import 'record_payment_sheet.dart';
 import 'vehicle_form_screen.dart';
 
@@ -120,6 +121,7 @@ class _VehicleDetailScreenState extends State<VehicleDetailScreen> {
                 today: repo.today[v.id],
                 deadline: repo.settings.deadline,
                 onRecord: () => showRecordPayment(context, repo, v),
+                onMessage: () => showMessageDriver(context, repo, v),
               ),
               const SizedBox(height: 12),
               FutureBuilder<VehicleHistory>(
@@ -217,11 +219,18 @@ class _Header extends StatelessWidget {
 }
 
 class _OwesCard extends StatelessWidget {
-  const _OwesCard({required this.vehicle, required this.today, required this.deadline, required this.onRecord});
+  const _OwesCard({
+    required this.vehicle,
+    required this.today,
+    required this.deadline,
+    required this.onRecord,
+    required this.onMessage,
+  });
   final Vehicle vehicle;
   final VehicleToday? today;
   final String deadline;
   final VoidCallback onRecord;
+  final VoidCallback onMessage;
 
   @override
   Widget build(BuildContext context) {
@@ -283,6 +292,12 @@ class _OwesCard extends StatelessWidget {
               onPressed: onRecord,
               icon: const Icon(Icons.payments_outlined, size: 20),
               label: const Text('Record cash payment'),
+            ),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: onMessage,
+              icon: const Icon(Icons.sms_outlined, size: 20),
+              label: const Text('Message driver'),
             ),
           ],
         ),

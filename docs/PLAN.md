@@ -2,7 +2,7 @@
 
 An internal Android app for tracking rent payments from the company's motorbikes. It reads M-Money SMS to mark payments, alerts the team when a driver is late or short, and reports on collections and bank deposits.
 
-Status (4 Nov 2026): milestones 1 to 3 work on the real project. The app has an intro with permission pages, cash payments, vehicle detail and the M-Money Reader. The Reader is tested on the MoMo phone with real M-Money SMS: it imported a driver's 4 payments from 31 Oct to 3 Nov. Next: alerts (push), deposits and reports.
+Status (4 Nov 2026): milestones 1 to 3 work on the real project. The app has an intro with permission pages, cash payments, vehicle detail and the M-Money Reader. The Reader is tested on the MoMo phone with real M-Money SMS: it imported a driver's 4 payments from 31 Oct to 3 Nov. Version 0.4.1 adds push alerts on every phone (including "Payment received"), the Message driver sheet and editable alert settings and messages (tested end to end on an emulator through the live push function). Next: deposits and reports.
 
 ---
 
@@ -132,6 +132,7 @@ For each vehicle, payments are applied in time order to dues in date order:
 | Short by the deadline | Same check, some money received | "RAD 123 A, Jean: 3,000 / 6,000 RWF received today" |
 | Day missed | Settings time (default 07:00 next day): one summary | "Yesterday 2 bikes didn't pay in full: RAD 123 A (0), RAE 456 B (3,000)" |
 | Overpayment | When a payment leaves credit | "RAD 123 A, Jean sent 12,000. 6,000 kept as credit" |
+| Payment received | Each new payment (MoMo: every phone; cash: every phone but the one that recorded it). Off switch in Settings. A payment that leaves credit gets the Overpayment one instead | "RAD 123 A · Jean sent 6,000 RWF. All paid up." |
 
 A day only alerts if its due already existed before that day's deadline. So a bike registered at 21:00, or added with a past start date, never alerts for those days. Alerts resolve on their own once the day is paid.
 
@@ -280,7 +281,7 @@ I can run these installs once you approve them, or you can do them yourself:
 | 1 | Join + vehicles | Join with team code. Add / edit / delete / activate vehicles. Search works. Data shows on every phone. | **Done** |
 | 2 | Dues + payments | Daily/weekly/monthly dues with rest days. Manual payments. Oldest-debt-first is correct (with tests). Today's total + card statuses. Vehicle detail. | **Done** |
 | 3 | Reader | Setup wizard, receiver + inbox scan, offline queue, catch-up import. Tested with real M-Money SMS. | **Done** (0.3.1, tested on the MoMo phone) |
-| 4 | Alerts | Push on all phones: deadline, missed day, overpayment, Reader health. Alerts list. Message-driver sheet. | Database side done (alerts, push function) |
+| 4 | Alerts | Push on all phones: deadline, missed day, overpayment, Reader health. Alerts list. Message-driver sheet. | **Done** (0.4.1). Still to do: a native speaker checks the Kinyarwanda, and a test notification on all 3 phones |
 | 5 | Deposits | Record deposits, see per-member holdings and history | Balances view done |
 | 6 | Reports | Collections + Deposits reports with date and vehicle filters | |
 | 7 | Release | Battery-saver testing on real phones, signed APK, installed on all 3 phones | |

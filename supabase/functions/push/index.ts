@@ -107,16 +107,36 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         message: {
           token: to,
-          notification: { title, body },
-          data: stringify(data ?? {}),
-          android: { priority: "HIGH", notification: { channel_id: "alerts" } },
+          // Data only: the app draws the notification itself (push/PushService.kt),
+          // so it can add a "Message driver" button and open the right screen.
+          data: { ...stringify(data ?? {}), title, body: body ?? "" },
+          // An alert older than a day is no longer useful.
+          android: { priority: "HIGH", ttl: "86400s" },
         },
       }),
     });
-    return { ok: res.ok, status: res.status, error: res.ok ? undefined : await res.text() };
+    return { to, ok: res.ok, status: res.status, error: res.ok ? undefined : await res.text() };
   }));
 
   const failed = results.filter((r) => !r.ok);
-  if (failed.length) console.warn("Some pushes failed", failed);
-  return Response.json({ sent: results.length - failed.length, failed: failed.length });
+  if (failed.length) console.warn("Some pushes failed", failed.map(({ status, error }) => ({ status, error })));
+
+  // Phones that uninstalled the app: stop sending to them.
+  const gone = failed.filter((r) => r.status === 404 || /UNREGISTERED/.test(r.error ?? "")).map((r) => r.to);
+  await forgetTokens(gone);
+
+  return Response.json({ sent: results.length - failed.length, failed: failed.length, forgotten: gone.length });
 });
+
+async function forgetTokens(tokens: string[]) {
+  const base = Deno.env.get("SUPABASE_URL");
+  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!tokens.length || !base || !key) return;
+  const list = tokens.map((t) => `"${t.replace(/"/g, "")}"`).join(",");
+  const res = await fetch(`${base}/rest/v1/devices?fcm_token=in.(${encodeURIComponent(list)})`, {
+    method: "PATCH",
+    headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json", Prefer: "return=minimal" },
+    body: JSON.stringify({ fcm_token: null }),
+  });
+  if (!res.ok) console.warn("Couldn't forget old tokens", res.status, await res.text());
+}

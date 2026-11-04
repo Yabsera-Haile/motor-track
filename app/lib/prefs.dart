@@ -19,4 +19,14 @@ abstract final class AppPrefs {
   /// During the intro, someone said MoMo money arrives on this phone.
   static bool get readerWanted => _prefs?.getBool('reader_wanted') ?? false;
   static set readerWanted(bool v) => _prefs?.setBool('reader_wanted', v);
+
+  /// Newest alert this phone has seen in the Alerts list (server time).
+  /// The bell on Home only counts alerts after it.
+  static DateTime? get alertsSeenAt => DateTime.tryParse(_prefs?.getString('alerts_seen_at') ?? '');
+  static set alertsSeenAt(DateTime? v) =>
+      v == null ? null : _prefs?.setString('alerts_seen_at', v.toUtc().toIso8601String());
+
+  /// Last language picked in "Message driver" (both, kinyarwanda, english).
+  static String? get messageLanguage => _prefs?.getString('message_language');
+  static set messageLanguage(String? v) => v == null ? null : _prefs?.setString('message_language', v);
 }

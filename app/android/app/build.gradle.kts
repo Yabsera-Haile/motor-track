@@ -4,6 +4,7 @@ import java.util.Properties
 plugins {
     id("com.android.application")
     id("kotlin-android")
+    id("com.google.gms.google-services")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
@@ -66,5 +67,8 @@ flutter {
 dependencies {
     // Background Reader job (reader/ReaderWorker.kt).
     implementation("androidx.work:work-runtime-ktx:2.9.1")
+    // Push notifications (push/PushService.kt).
+    implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
+    implementation("com.google.firebase:firebase-messaging")
     testImplementation("junit:junit:4.13.2")
 }

@@ -1,9 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../data/repo.dart';
+import '../push/push_service.dart';
 import '../reader/reader_service.dart';
 import '../theme.dart';
+import 'alerts_screen.dart';
 import 'home_screen.dart';
+import 'message_driver_sheet.dart';
+import 'vehicle_detail_screen.dart';
 import 'settings_screen.dart';
 
 /// Bottom navigation: Home, Reports, Deposits, Settings.
@@ -23,6 +29,10 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _checkInbox();
+    widget.repo.registerPush();
+    PushService.onOpened(_handleNotificationTap);
+    // Opened by tapping a notification.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _handleNotificationTap());
   }
 
   @override
@@ -37,6 +47,45 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     if (state != AppLifecycleState.resumed) return;
     widget.repo.load();
     _checkInbox();
+    widget.repo.registerPush();
+  }
+
+  bool _opening = false;
+
+  Future<void> _handleNotificationTap() async {
+    if (_opening) return;
+    _opening = true;
+    try {
+      final action = await PushService.takeOpenAction();
+      if (action == null || !mounted) return;
+      final nav = Navigator.of(context);
+      // Start from Home, so Back from the alert leads somewhere sensible.
+      nav.popUntil((r) => r.isFirst);
+      setState(() => _tab = 0);
+      if (action.open == 'home') return;
+      final repo = widget.repo;
+      if (action.open == 'vehicle') {
+        if (repo.vehicleById(action.vehicleId) != null) {
+          unawaited(
+            nav.push(
+              MaterialPageRoute<void>(
+                builder: (_) => VehicleDetailScreen(repo: repo, vehicleId: action.vehicleId!),
+              ),
+            ),
+          );
+        }
+        return;
+      }
+      unawaited(nav.push(MaterialPageRoute<void>(builder: (_) => AlertsScreen(repo: repo))));
+      if (action.open == 'message' && action.alertId != null) {
+        final alert = await repo.alert(action.alertId!);
+        if (alert != null && mounted) await showMessageDriverForAlert(nav.context, repo, alert);
+      }
+    } catch (e) {
+      debugPrint('notification tap failed: $e');
+    } finally {
+      _opening = false;
+    }
   }
 
   void _checkInbox() {

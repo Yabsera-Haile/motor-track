@@ -14,6 +14,7 @@ class VehicleCard extends StatelessWidget {
     required this.onOpen,
     required this.onToggle,
     required this.onRecordPayment,
+    required this.onMessage,
     required this.onEdit,
     required this.onDelete,
   });
@@ -25,6 +26,7 @@ class VehicleCard extends StatelessWidget {
   final VoidCallback onOpen;
   final ValueChanged<bool> onToggle;
   final VoidCallback onRecordPayment;
+  final VoidCallback onMessage;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
@@ -79,11 +81,13 @@ class VehicleCard extends StatelessWidget {
                   icon: const Icon(Icons.more_vert, color: Palette.ink),
                   onSelected: (a) => switch (a) {
                     'pay' => onRecordPayment(),
+                    'message' => onMessage(),
                     'edit' => onEdit(),
                     _ => onDelete(),
                   },
                   itemBuilder: (_) => const [
                     PopupMenuItem(value: 'pay', child: Text('Record cash payment')),
+                    PopupMenuItem(value: 'message', child: Text('Message driver')),
                     PopupMenuItem(value: 'edit', child: Text('Edit')),
                     PopupMenuItem(
                       value: 'delete',
